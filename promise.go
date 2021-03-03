@@ -6,6 +6,11 @@ const (
 	SUCCESS
 	REJECT
 )
+
+/*
+ * This has a reject channel and resolve channel.  Reject channel is consumed by catch.
+ * Resolve channel is consumed by then.	
+ */
 type Promise struct {
 	state int
 	exec func(resolve func(interface{}), reject func(error))
@@ -52,6 +57,8 @@ func NewPromise(exec func(resolve func(interface{}), reject func(error))) *Promi
 	return promise
 }
 
+// Consumes the resolve channel. If there is block on reject channel passes it 
+// forward to be consumed by a dangling catch
 func (p *Promise) then(then_func func(val interface{}) interface{}) *Promise {
 	var result *Promise
 	result = NewPromise(func(resolve func(interface{}), reject func(error)) {
@@ -84,6 +91,8 @@ func (p *Promise) then(then_func func(val interface{}) interface{}) *Promise {
 	return result
 }
 
+// Consumes the reject channel. If there is block on resolve. Passes it on
+// to consumed by then channel.
 func (p *Promise) catch(catch_func func(err error) interface{}) *Promise {
 	var result *Promise
 	result = NewPromise(func(resolve func(interface{}), reject func(error)) {
@@ -117,7 +126,7 @@ func (p *Promise) catch(catch_func func(err error) interface{}) *Promise {
 	
 }
 
-
+// Just passes the channel variables forward
 func (p *Promise) finally(final_func func(interface{}) interface{}) *Promise {
 	var result *Promise
 	result = NewPromise(func(resolve func(interface{}), reject func(error)) {
